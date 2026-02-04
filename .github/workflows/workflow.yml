@@ -1,4 +1,4 @@
-name: "JFrog CLI Example"
+name: "JFrog CLI npm Publish"
 on: push
 
 jobs:
@@ -7,26 +7,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
         env:
-          # JFrog platform url (for example: https://acme.jfrog.io)
           JF_URL: ${{ secrets.JF_URL }}
-
-          # JFrog Platform access token
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
 
-          # Basic authentication credentials
-          ## JF_USER: ${{ secrets.JF_USER }}
-          ## JF_PASSWORD: ${{ secrets.JF_PASSWORD }}
-
-      - name: Run JFrog CLI
+      - name: npm Publish to Artifactory
         run: |
-          # Ping the server
-          jf rt ping
-          # Collect environment variables for the build
-          jf rt bce
-          # Collect VCS details from git and add them to the build
-          jf rt bag
-          # Publish build info
-          jf rt bp
+          # 1. Configure the CLI to use your specific repository
+          # --repo-deploy is for publishing, --repo-resolve is for installing dependencies
+          jf npm-config --repo-deploy=github-npm --repo-resolve=github-npm
+
+          # 2. Install dependencies (if you have any in package.json)
+          jf npm install
+
+          # 3. Publish the package and record build info
+          # We use github.run_id to keep the build names unique in Artifactory
+          jf npm publish --build-name=npm-build --build-number=${{ github.run_id }}
+
+          # 4. Collect environment and git data
+          jf rt bce npm-build ${{ github.run_id }}
+          jf rt bag npm-build ${{ github.run_id }}
+
+          # 5. Finalize by pushing the Build Info metadata
+          jf rt bp npm-build ${{ github.run_id }}
