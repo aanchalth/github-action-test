@@ -1,5 +1,9 @@
-name: "JFrog CLI npm Publish"
+name: "JFrog CLI npm Publish OIDC"
 on: push
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   build:
@@ -11,22 +15,22 @@ jobs:
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
         env:
-          # This maps your Config Token secret to the CLI's environment
-          JF_ENV_1: ${{ secrets.JF_SECRET_ENV_1 }}
+          JF_URL: https://migration3.jfrog.io 
+        with:
+          oidc-provider-name: git-test 
+          oidc-audience: my-aud
 
       - name: npm Publish to Artifactory
-        # Move into your project folder
         working-directory: ./npm-test
         run: |
-          # 1. Configure npm to use your Artifactory repo
+          # Configure for your 'github-npm' repository
           jf npm-config --repo-deploy=github-npm --repo-resolve=github-npm
 
-          # 2. Install and Publish
-          # We use the GitHub run ID as a unique build number
+          # Install and Publish using OIDC-authenticated session
           jf npm install
           jf npm publish --build-name=npm-build --build-number=${{ github.run_id }}
 
-          # 3. Collect and Publish Build Info (Metadata)
+          # Finalize Build Info
           jf rt bce npm-build ${{ github.run_id }}
           jf rt bag npm-build ${{ github.run_id }}
           jf rt bp npm-build ${{ github.run_id }}
