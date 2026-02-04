@@ -2,7 +2,7 @@ name: "JFrog CLI npm Publish OIDC"
 on: push
 
 permissions:
-  id-token: write  # Required to request the JWT
+  id-token: write
   contents: read
 
 jobs:
@@ -21,21 +21,23 @@ jobs:
           oidc-provider-name: git-test 
           oidc-audience: my-aud
 
-      - name: Fetch and Debug OIDC Token
-        # This step manually retrieves the same token the JFrog CLI uses
+      - name: Debug OIDC Token Exchange
+        # This implementation follows the "Under the Hood" debugging guide
         run: |
-          # 1. Request the token from GitHub's internal IdP
-          # The 'actions/oidc-client' User-Agent is required
-          RAW_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" \
+          echo "--- Phase 1: Requesting Identity ---"
+          # We use jfrog-github as the audience example from the guide; 
+          # ensure this matches your 'my-aud' if that is what JFrog expects.
+          ID_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" \
             -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=my-aud" \
             | jq -r .value)
           
-          # 2. Decode the token payload to see the claims (repo, branch, etc.)
-          # Note: GitHub will mask the raw token as *** in logs
-          echo "Decoding OIDC Token Claims:"
-          echo "$RAW_TOKEN" | cut -d "." -f 2 | base64 -d | jq .
-        
+          echo "--- Phase 2: Inspecting Subject Token ---"
+          # GitHub automatically masks the token as *** for security. 
+          # To see the structure, we decode the payload (middle part of the JWT).
+          echo "Decoded Payload (Claims):"
+          echo "$ID_TOKEN" | cut -d "." -f 2 | base64 -d | jq .
+
       - name: npm Publish to Artifactory
         working-directory: ./npm-test
         run: |
