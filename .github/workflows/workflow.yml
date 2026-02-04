@@ -18,7 +18,7 @@ jobs:
           JF_URL: https://migration3.jfrog.io 
         with:
           oidc-provider-name: git-test 
-          oidc-audience: my-aud
+          oidc-audience: jfrog-github
 
       - name: npm Publish to Artifactory
         working-directory: ./npm-test
