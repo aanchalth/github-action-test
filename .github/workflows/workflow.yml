@@ -11,25 +11,22 @@ jobs:
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
         env:
-          JF_URL: ${{ secrets.JF_URL }}
-          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+          # This maps your Config Token secret to the CLI's environment
+          JF_ENV_1: ${{ secrets.JF_SECRET_ENV_1 }}
 
       - name: npm Publish to Artifactory
+        # Move into your project folder
+        working-directory: ./npm-test
         run: |
-          # 1. Configure the CLI to use your specific repository
-          # --repo-deploy is for publishing, --repo-resolve is for installing dependencies
+          # 1. Configure npm to use your Artifactory repo
           jf npm-config --repo-deploy=github-npm --repo-resolve=github-npm
 
-          # 2. Install dependencies (if you have any in package.json)
+          # 2. Install and Publish
+          # We use the GitHub run ID as a unique build number
           jf npm install
-
-          # 3. Publish the package and record build info
-          # We use github.run_id to keep the build names unique in Artifactory
           jf npm publish --build-name=npm-build --build-number=${{ github.run_id }}
 
-          # 4. Collect environment and git data
+          # 3. Collect and Publish Build Info (Metadata)
           jf rt bce npm-build ${{ github.run_id }}
           jf rt bag npm-build ${{ github.run_id }}
-
-          # 5. Finalize by pushing the Build Info metadata
           jf rt bp npm-build ${{ github.run_id }}
