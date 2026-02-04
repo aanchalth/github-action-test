@@ -13,12 +13,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup JFrog CLI
+        # An explicit ID is required to reference outputs later
+        id: setup-jfrog
         uses: jfrog/setup-jfrog-cli@v4
         env:
           JF_URL: https://migration3.jfrog.io 
         with:
           oidc-provider-name: git-test 
           oidc-audience: my-aud
+
+      - name: Echo JFrog User
+        # This will print the username mapped in your JFrog Identity Mapping
+        run: echo "Authenticated as JFrog user ${{ steps.setup-jfrog.outputs.oidc-user }}"
 
       - name: npm Publish to Artifactory
         working-directory: ./npm-test
