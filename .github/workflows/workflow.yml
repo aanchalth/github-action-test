@@ -2,7 +2,7 @@ name: "JFrog CLI npm Publish OIDC"
 on: push
 
 permissions:
-  id-token: write
+  id-token: write  # Required to request the JWT
   contents: read
 
 jobs:
@@ -21,13 +21,21 @@ jobs:
           oidc-provider-name: git-test 
           oidc-audience: my-aud
 
-      - name: Print Environment Variables
-        # This lists all available variables on the runner
-        run: env | sort
-
-      - name: Echo JFrog User
-        run: echo "Authenticated as JFrog user ${{ steps.setup-jfrog.outputs.oidc-user }}"
-
+      - name: Fetch and Debug OIDC Token
+        # This step manually retrieves the same token the JFrog CLI uses
+        run: |
+          # 1. Request the token from GitHub's internal IdP
+          # The 'actions/oidc-client' User-Agent is required
+          RAW_TOKEN=$(curl -sLS -H "User-Agent: actions/oidc-client" \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=jfrog-github" \
+            | jq -r .value)
+          
+          # 2. Decode the token payload to see the claims (repo, branch, etc.)
+          # Note: GitHub will mask the raw token as *** in logs
+          echo "Decoding OIDC Token Claims:"
+          echo "$RAW_TOKEN" | cut -d "." -f 2 | base64 -d | jq .
+        
       - name: npm Publish to Artifactory
         working-directory: ./npm-test
         run: |
