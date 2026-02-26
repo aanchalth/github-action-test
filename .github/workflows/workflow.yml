@@ -43,7 +43,7 @@ jobs:
         run: |
           jf npm-config --repo-deploy=github-npm --repo-resolve=github-npm
           jf npm install
-          jf npm publish --build-name=npm-build --build-number=${{ github.run_id }}
-          jf rt bce npm-build ${{ github.run_id }} 
-          jf rt bag npm-build ${{ github.run_id }} 
-          jf rt bp npm-build ${{ github.run_id }} 
+          jf npm publish --build-name=npm-build --build-number=${{ github.run_id }} --project ncs
+          jf rt bce npm-build ${{ github.run_id }} --project ncs
+          jf rt bag npm-build ${{ github.run_id }} --project ncs
+          jf rt bp npm-build ${{ github.run_id }} --project ncs
