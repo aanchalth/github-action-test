@@ -41,7 +41,7 @@ jobs:
       - name: npm Publish to Artifactory
         working-directory: ./npm-test
         run: |
-          jf npm-config --repo-deploy=github-npm --repo-resolve=ncs-npm-test
+          jf npm-config --repo-deploy=ncs-npm-test --repo-resolve=ncs-npm-test
           jf npm install
           jf npm publish --build-name=npm-build --build-number=${{ github.run_id }} --project ncs
           jf rt bce npm-build ${{ github.run_id }} --project ncs
